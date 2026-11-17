@@ -1,0 +1,76 @@
+{
+  "project_info": {
+    "project_number": "522431636600",
+    "project_id": "notes-6178f",
+    "storage_bucket": "notes-6178f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522431636600:android:9634def464eec6870f798d",
+        "android_client_info": {
+          "package_name": "com.example.firebase_googleauth_lozano"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "522431636600-bauogmduhs7cco660es4evjhctgtjnu2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRgs0c1VUIrmTTOcUctYfQk1NOtGZA074"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "522431636600-bauogmduhs7cco660es4evjhctgtjnu2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522431636600:android:ffcc7cd00c19ae440f798d",
+        "android_client_info": {
+          "package_name": "firebase_auth.project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "522431636600-hicmhmv1ccb18ldjr3h3e4m48trifhgk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "firebase_auth.project",
+            "certificate_hash": "c27433f66266980a5eb321de014ff095718d24d1"
+          }
+        },
+        {
+          "client_id": "522431636600-bauogmduhs7cco660es4evjhctgtjnu2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRgs0c1VUIrmTTOcUctYfQk1NOtGZA074"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "522431636600-bauogmduhs7cco660es4evjhctgtjnu2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
