@@ -48,6 +48,15 @@ class AuthService {
     }
   }
 
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (error) {
+      // Give the same response when the address has no account.
+      if (error.code != 'user-not-found') rethrow;
+    }
+  }
+
   Future<void> signOut() async {
     if (!kIsWeb) {
       await _googleSignIn?.signOut();

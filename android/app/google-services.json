@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "522431636600-5gfs9f9jrm90r91bvlha692mb8g5rt9j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.firebase_googleauth_lozano",
+            "certificate_hash": "c27433f66266980a5eb321de014ff095718d24d1"
+          }
+        },
+        {
           "client_id": "522431636600-bauogmduhs7cco660es4evjhctgtjnu2.apps.googleusercontent.com",
           "client_type": 3
         }

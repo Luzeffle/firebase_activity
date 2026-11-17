@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_googleauth_lozano/auth_service.dart';
 import 'package:firebase_googleauth_lozano/register_page.dart';
 import 'package:firebase_googleauth_lozano/home_page.dart';
@@ -12,13 +13,55 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailCtrl = TextEditingController();
+  final TextEditingController passwordCtrl = TextEditingController();
   bool loading = false;
+  bool _sendingPasswordReset = false;
+
+  @override
+  void dispose() {
+    emailCtrl.dispose();
+    passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendPasswordResetEmail(AuthService auth) async {
+    if (_sendingPasswordReset) return;
+    final email = emailCtrl.text.trim();
+    if (email.isEmpty) {
+      _showResetMessage('Enter your email address, then tap Forgot password?');
+      return;
+    }
+
+    setState(() => _sendingPasswordReset = true);
+    try {
+      await auth.sendPasswordResetEmail(email);
+      _showResetMessage(
+        'If an account exists for this email, you’ll receive a reset link.',
+      );
+    } on FirebaseAuthException catch (error) {
+      _showResetMessage(switch (error.code) {
+        'invalid-email' => 'Enter a valid email address.',
+        'network-request-failed' =>
+          'Check your internet connection and try again.',
+        'too-many-requests' => 'Too many attempts. Please try again later.',
+        _ => 'Could not request a reset link. Please try again.',
+      });
+    } finally {
+      if (mounted) setState(() => _sendingPasswordReset = false);
+    }
+  }
+
+  void _showResetMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final AuthService auth = AuthService();
-    final TextEditingController emailCtrl = TextEditingController();
-    final TextEditingController passwordCtrl = TextEditingController();
 
     return Scaffold(
       appBar: AppBar(title: Text('Login')),
@@ -71,6 +114,12 @@ class _LoginPageState extends State<LoginPage> {
                     );
                   }
                 },
+              ),
+              TextButton(
+                onPressed: loading || _sendingPasswordReset
+                    ? null
+                    : () => _sendPasswordResetEmail(auth),
+                child: const Text('Forgot password?'),
               ),
               SizedBox(height: 24,),
               Row(

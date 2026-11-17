@@ -11,9 +11,16 @@ class PickedImage {
 }
 
 class CrudService {
-  final CollectionReference items = FirebaseFirestore.instance.collection('items');
+  static const favoriteField = 'isFavorite';
+  final CollectionReference<Map<String, dynamic>> items = FirebaseFirestore
+      .instance
+      .collection('items');
 
-  final CloudinaryPublic _cloudinary = CloudinaryPublic('jk6vbund', 'cce106', cache: false);
+  final CloudinaryPublic _cloudinary = CloudinaryPublic(
+    'iidvichw',
+    'flutter_notes_preset',
+    cache: false,
+  );
 
   final ImagePicker _picker = ImagePicker();
 
@@ -23,17 +30,17 @@ class CrudService {
     final file = File(pickedFile.path);
 
     final response = await _cloudinary.uploadFile(
-        CloudinaryFile.fromFile(
-            file.path,
-            resourceType: CloudinaryResourceType.Image
-        )
+      CloudinaryFile.fromFile(
+        file.path,
+        resourceType: CloudinaryResourceType.Image,
+      ),
     );
 
     return PickedImage(file: file, url: response.secureUrl);
   }
 
   //Create
-  Future <void> addItem(String name, int quantity) {
+  Future<void> addItem(String name, int quantity) {
     return items.add({
       'name': name,
       'quantity': quantity,
@@ -42,7 +49,11 @@ class CrudService {
   }
 
   //Create
-  Future <void> addItemWithImage(String name, int quantity, String? imageUrl) async {
+  Future<void> addItemWithImage(
+    String name,
+    int quantity,
+    String? imageUrl,
+  ) async {
     await items.add({
       'name': name,
       'quantity': quantity,
@@ -52,21 +63,24 @@ class CrudService {
   }
 
   //Read
-  Stream<QuerySnapshot> getItems() {
+  Stream<QuerySnapshot<Map<String, dynamic>>> getItems() {
     return items.orderBy('createdAt', descending: true).snapshots();
   }
 
-
   //Update
-  Future <void> updateItem(String id, String name, int quantity) {
+  Future<void> updateItem(String id, String name, int quantity) {
     return items.doc(id).update({
       'name': name,
-      'quantity': quantity,
+      'quantity': quantity
     });
   }
 
+  Future<void> setFavorite(String id, bool isFavorite) {
+    return items.doc(id).update({favoriteField: isFavorite});
+  }
+
   //Delete
-  Future <void> deleteItem(String id) {
+  Future<void> deleteItem(String id) {
     return items.doc(id).delete();
   }
 }

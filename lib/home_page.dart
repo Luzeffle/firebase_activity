@@ -6,18 +6,46 @@ import 'package:firebase_googleauth_lozano/login_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class HomePage extends StatelessWidget {
-  HomePage({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   final CrudService service = CrudService();
+  late final _items = service.getItems();
   final TextEditingController nameCtrl = TextEditingController();
   final TextEditingController qtyCtrl = TextEditingController();
+  bool _favoritesOnly = false;
+
+  @override
+  void dispose() {
+    nameCtrl.dispose();
+    qtyCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _setFavorite(String id, bool isFavorite) async {
+    try {
+      await service.setFavorite(id, isFavorite);
+    } on FirebaseException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not update this favorite. Please try again.'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey,
       appBar: AppBar(
-        title: Text('Firebase Agsoy'),
+        title: Text('Firebase Lozano'),
         centerTitle: true,
         backgroundColor: Colors.teal,
         actions: [
@@ -27,7 +55,7 @@ class HomePage extends StatelessWidget {
               AuthService().signOut();
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (_) => LoginPage()),
+                MaterialPageRoute(builder: (_) => const LoginPage()),
               );
             },
           ),
@@ -40,79 +68,119 @@ class HomePage extends StatelessWidget {
         onPressed: () => openAddDialog(context),
       ),
 
-      body: StreamBuilder<QuerySnapshot>(
-        stream: service.getItems(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text('All items')),
+                ButtonSegment(value: true, label: Text('Favorites')),
+              ],
+              selected: {_favoritesOnly},
+              onSelectionChanged: (selection) {
+                setState(() => _favoritesOnly = selection.single);
+              },
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: _items,
+              builder: _buildItems,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-          final docs = snapshot.data!.docs;
-          if (docs.isEmpty) {
-            return const Center(
-              child: Text('No items found', style: TextStyle(fontSize: 18)),
-            );
-          }
+  Widget _buildItems(
+    BuildContext context,
+    AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot,
+  ) {
+    if (snapshot.hasError) {
+      return const Center(child: Text('Could not load items.'));
+    }
+    if (!snapshot.hasData) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
-              var item = docs[index];
+    final allItems = snapshot.data!.docs;
+    final items = _favoritesOnly
+        ? allItems
+              .where((item) => item.data()[CrudService.favoriteField] == true)
+              .toList()
+        : allItems;
+    if (items.isEmpty) {
+      return Center(
+        child: Text(
+          _favoritesOnly ? 'No favorites yet' : 'No items found',
+          style: const TextStyle(fontSize: 18),
+        ),
+      );
+    }
 
-              final data = item.data() as Map<String, dynamic>;
-              final imageUrl = data['image_url'];
-              return Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+    return ListView.builder(
+      padding: const EdgeInsets.all(8),
+      itemCount: items.length,
+      itemBuilder: (context, index) => _buildItem(context, items[index]),
+    );
+  }
+
+  Widget _buildItem(
+    BuildContext context,
+    QueryDocumentSnapshot<Map<String, dynamic>> item,
+  ) {
+    final data = item.data();
+    final imageUrl = data['image_url'];
+    final isFavorite = data[CrudService.favoriteField] == true;
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: imageUrl != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  imageUrl,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
                 ),
-                margin: EdgeInsets.symmetric(vertical: 6),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  leading: imageUrl != null
-                      ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      imageUrl,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                      : null,
-                  title: Text(
-                    data['name'] ?? '',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Quantity ${data['quantity'] ?? 0}',
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.orange),
-                        onPressed: () => openEditDialog(context, item),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.orange),
-                        onPressed: () => _confirmDelete(context, item.id),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+              )
+            : null,
+        title: Text(
+          data['name'] ?? '',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          'Quantity ${data['quantity'] ?? 0}',
+          style: const TextStyle(fontSize: 14, color: Colors.grey),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.star_border),
+              selectedIcon: const Icon(Icons.star, color: Colors.amber),
+              isSelected: isFavorite,
+              tooltip: isFavorite
+                  ? 'Remove from favorites'
+                  : 'Add to favorites',
+              onPressed: () => _setFavorite(item.id, !isFavorite),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.orange),
+              onPressed: () => openEditDialog(context, item),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.orange),
+              onPressed: () => _confirmDelete(context, item.id),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -192,7 +260,7 @@ class HomePage extends StatelessWidget {
                 label: const Text('Upload image'),
                 onPressed: () async {
                   final pickedFile = await service.pickImageForAddItem();
-                  if (pickedFile != null) {
+                  if (pickedFile != null && context.mounted) {
                     setState(() {
                       selectedImageFile = pickedFile.file;
                       selectedImageUrl = pickedFile.url;
@@ -222,7 +290,7 @@ class HomePage extends StatelessWidget {
                     int.parse(qtyCtrl.text),
                     selectedImageUrl,
                   );
-                  Navigator.pop(context);
+                  if (context.mounted) Navigator.pop(context);
                 }
               },
             ),
